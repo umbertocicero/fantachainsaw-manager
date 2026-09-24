@@ -275,6 +275,22 @@ def aggregate_stats(voti_rows_per_giornata, weights):
     return agg
 
 
+def compute_player_value(fantamedia_corretta, gol, assist, qta, partite_valutate=0):
+    """Valutazione orientata a vincere il fantacalcio.
+
+    La priorità va alla performance reale (media + gol + assist). Il costo
+    riduce solo leggermente il punteggio, così un giocatore forte resta davanti
+    a un cheap player mediocre.
+    """
+    if fantamedia_corretta is None:
+        return 0.0
+
+    base = fantamedia_corretta * 12.0 + gol * 18.0 + assist * 7.0
+    stability = 1.0 + min(max(partite_valutate, 0), 12) * 0.03
+    price_penalty = max(qta, 1) * 0.75
+    return round(base * stability - price_penalty, 4)
+
+
 def build_players(quotazioni_path, voti_paths, weights=None):
     """Funzione principale: legge quotazioni + tutte le giornate di voti e
     ritorna la lista di giocatori con statistiche e punteggio 'valore'."""
@@ -340,6 +356,12 @@ def build_players(quotazioni_path, voti_paths, weights=None):
             rating_scaled = max(p["fvm"], 1.0)
 
         prezzo = max(p["qta"], 1)
-        p["valore"] = round((rating_scaled ** 1.5) / prezzo, 4)
+        p["valore"] = compute_player_value(
+            p.get("fantamedia_corretta"),
+            p.get("gol", 0),
+            p.get("assist", 0),
+            prezzo,
+            p.get("partite_valutate", 0),
+        )
 
-    return sorted(players.values(), key=lambda p: -p["fvm"])
+    return sorted(players.values(), key=lambda p: -p["valore"])

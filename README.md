@@ -29,6 +29,11 @@ sui dati di quotazione e voto reali, non sul manuale.
   subito il risultato. Funziona solo mentre quella giornata è effettivamente
   in corso (il servizio esterno risponde 404 fuori da una partita live) e
   richiede Node.js installato (vedi Requisiti).
+- **Aggiornamento statistiche online**: il pulsante "Aggiorna statistiche
+  online" legge le schede stagionali ufficiali di Fantacalcio.it, compresi
+  gol, assist, partite a voto e fantamedia. I dati online aggiornati vengono
+  conservati anche dopo il riavvio; se una scheda non è raggiungibile, restano
+  i dati locali precedenti.
 - **Gestione asta**: budget totale e slot per ruolo configurabili, segna i
   giocatori come "presi da te" (con prezzo) o "presi da altri" e i consigli
   si aggiornano tenendo conto del budget e degli slot residui.

@@ -10,12 +10,14 @@ import os
 import shutil
 import subprocess
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from flask import Flask, jsonify, request
 from werkzeug.utils import secure_filename
 
 import stats_engine
+import online_stats
 
 BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent
@@ -80,6 +82,23 @@ def rebuild_players(pesi_override=None):
         save_pesi(pesi)
     with _lock:
         out = stats_engine.build_players(quotazioni_path(), voti_paths(), pesi)
+        online_fields = (
+            "partite_valutate", "media_voto", "fantamedia", "fantamedia_corretta",
+            "gol", "assist", "online_url", "stima",
+        )
+        for player in out:
+            previous = PLAYERS.get(player["id"], {})
+            if previous.get("online_url"):
+                for field in online_fields:
+                    if field in previous:
+                        player[field] = previous[field]
+                player["valore"] = stats_engine.compute_player_value(
+                    player.get("fantamedia_corretta"),
+                    player.get("gol", 0),
+                    player.get("assist", 0),
+                    max(player.get("qta", 1), 1),
+                    player.get("partite_valutate", 0),
+                )
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False, indent=1)
         PLAYERS = {p["id"]: p for p in out}
@@ -348,6 +367,41 @@ def api_recompute():
     body = request.get_json(silent=True) or {}
     meta = rebuild_players(body.get("pesi"))
     return jsonify(meta)
+
+
+@app.post("/api/online/sync")
+def api_online_sync():
+    """Aggiorna le statistiche stagionali dalle schede ufficiali online."""
+    aggiornati = 0
+    non_disponibili = 0
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {
+            executor.submit(online_stats.fetch_player_stats, player): player
+            for player in PLAYERS.values()
+        }
+        for future in as_completed(futures):
+            player = futures[future]
+            try:
+                stats = future.result()
+            except Exception:
+                stats = None
+            if not stats:
+                non_disponibili += 1
+                continue
+            player.update(stats)
+            player["stima"] = False
+            player["valore"] = stats_engine.compute_player_value(
+                player["fantamedia_corretta"],
+                player.get("gol", 0),
+                player.get("assist", 0),
+                max(player.get("qta", 1), 1),
+                player.get("partite_valutate", 0),
+            )
+            aggiornati += 1
+
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(PLAYERS.values()), f, ensure_ascii=False, indent=1)
+    return jsonify({"aggiornati": aggiornati, "non_disponibili": non_disponibili})
 
 
 @app.post("/api/pesi/reset")

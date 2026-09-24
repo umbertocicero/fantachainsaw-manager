@@ -286,6 +286,19 @@ async function scaricaGiornataLive() {
     await refreshAll();
 }
 
+async function sincronizzaStatisticheOnline() {
+    const status = document.getElementById("recompute-status");
+    status.textContent = "Aggiornamento delle statistiche ufficiali in corso...";
+    try {
+        const data = await api("/api/online/sync", { method: "POST" });
+        status.textContent = `Aggiornati ${data.aggiornati} giocatori; ${data.non_disponibili} non disponibili.`;
+        await refreshAll();
+        await loadFiles();
+    } catch (err) {
+        status.textContent = `Aggiornamento non riuscito: ${err.message}`;
+    }
+}
+
 async function recompute() {
     const status = document.getElementById("recompute-status");
     status.textContent = "Ricalcolo in corso...";
