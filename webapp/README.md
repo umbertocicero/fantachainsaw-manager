@@ -1,33 +1,31 @@
-# Consigliere Fanta Asta
+# webapp
 
-Semplice web app (Flask) che consiglia quali giocatori scegliere durante
-un'asta del fantacalcio, basandosi su:
+Codice dell'applicazione Flask "Fanta Asta Live - Consigliere".
 
-- **Quotazioni_Fantacalcio_Stagione_2026_27.xlsx** (FVM e quotazione d'asta)
-- **Voti_Fantacalcio_Stagione_2026_27_Giornata_5.xlsx** (voto dell'ultima giornata, come indicatore di forma)
+Per la descrizione del progetto, i requisiti e le istruzioni di avvio vedi il
+[README principale del repo](../README.md).
 
-Il manuale `ManualeFantaAstaLive2025.pdf` descrive solo il funzionamento dello
-strumento d'asta di Fantacalcio.it (non contiene strategie di scelta), quindi
-i consigli qui si basano sui dati di quotazione/voto reali.
+## File principali
 
-## Come funziona
+- `app.py` — API Flask: upload dei file, ricalcolo, gestione asta
+  (draft/undraft/reset), configurazione budget e slot, persistenza in `data/`.
+- `stats_engine.py` — motore di calcolo puro (nessuna dipendenza da Flask):
+  parsing di quotazioni/voti (`.xlsx` e feed live `.json`) e calcolo di
+  fantamedia corretta, bonus rigorista e indice di valore.
+- `build_data.py` — CLI che rigenera `data/players.json` dai soli file Excel
+  di default nella root del repo, senza avviare il server:
 
-1. Imposta budget totale e numero di slot per ruolo (Portieri/Difensori/Centrocampisti/Attaccanti).
-2. Nella sezione "Consigliati per te" trovi, ruolo per ruolo, i migliori giocatori
-   ancora liberi, ordinati per un punteggio "valore" che combina FVM, prezzo
-   d'asta e forma recente (FVM^1.5 / prezzo, con bonus/malus dal voto).
-3. Man mano che l'asta procede, segna ogni giocatore come "Preso da te" (con il
-   prezzo pagato) o "Preso da altri": budget, slot residui e consigli si
-   aggiornano automaticamente.
+  ```powershell
+  python build_data.py
+  ```
 
-## Avvio
+- `templates/index.html`, `static/app.js`, `static/style.css` — interfaccia.
+
+## Avvio rapido
 
 ```powershell
-cd webapp
-python build_data.py   # rigenera data/players.json dai file Excel
-python app.py           # avvia il server su http://127.0.0.1:5050
+python app.py
 ```
 
-Lo stato dell'asta (giocatori presi) viene salvato in `data/state.json`;
-cancella il file (o usa il pulsante "Azzera asta" nell'interfaccia) per
-ricominciare da zero.
+Server su [http://127.0.0.1:5050](http://127.0.0.1:5050).
+
