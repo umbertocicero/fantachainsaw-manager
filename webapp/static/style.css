@@ -192,7 +192,9 @@ tr.preso-altri td { background: rgba(239,68,68,.10); opacity: .7; }
     font-size: .78rem;
     vertical-align: middle;
 }
-.top-icon { background: #facc1530; color: #facc15; }
+.recommendation-strong { background: #ef444433; color: #ef4444; }
+.recommendation-medium { background: #facc1533; color: #facc15; }
+.recommendation-recommended { background: #22c55e33; color: #22c55e; }
 .rigorista-icon { background: #f59e0b33; color: #f59e0b; }
 
 footer { text-align: center; color: var(--muted); font-size: .75rem; margin-top: 2rem; }

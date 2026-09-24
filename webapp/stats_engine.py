@@ -291,6 +291,20 @@ def compute_player_value(fantamedia_corretta, gol, assist, qta, partite_valutate
     return round(base * stability - price_penalty, 4)
 
 
+def recommendation_by_role(players):
+    """Assegna le tre fasce di consiglio ai migliori 15 di ogni ruolo."""
+    for ruolo in RUOLI:
+        ranked = sorted(
+            (p for p in players if p["ruolo"] == ruolo),
+            key=lambda p: (-p.get("valore", 0), -(p.get("fantamedia_corretta") or 0), p["nome"]),
+        )
+        for position, player in enumerate(ranked[:15], start=1):
+            player["recommendation_rank"] = position
+            player["recommendation_tier"] = (
+                "strong" if position <= 5 else "medium" if position <= 10 else "recommended"
+            )
+
+
 def build_players(quotazioni_path, voti_paths, weights=None):
     """Funzione principale: legge quotazioni + tutte le giornate di voti e
     ritorna la lista di giocatori con statistiche e punteggio 'valore'."""

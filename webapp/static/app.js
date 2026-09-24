@@ -104,19 +104,18 @@ async function loadPlayers() {
                     <button class="small secondary" onclick="draftPlayer(${p.id}, 'altri', true)">Altri</button>
                 </div>`;
         }
-        const stato = p.preso_da === "me" ? `Mio (${p.prezzo_pagato})` : p.preso_da === "altri" ? "Preso da altri" : "Libero";
+        const recommendation = p.recommendation_tier
+            ? `<span class="player-icon recommendation-${p.recommendation_tier}" title="${p.recommendation_rank <= 5 ? "Fortemente consigliato" : p.recommendation_rank <= 10 ? "Consigliato medio" : "Consigliato"}" aria-label="Consiglio posizione ${p.recommendation_rank}">★</span>`
+            : "";
         return `<tr class="${rowClass}">
             <td><span class="pill ${p.ruolo}">${p.ruolo}</span></td>
-            <td>${p.top_player ? '<span class="player-icon top-icon" title="Top 5 del ruolo" aria-label="Top 5 del ruolo">★</span>' : ""}${p.nome}${p.rigorista ? ' <span class="player-icon rigorista-icon" title="Rigorista" aria-label="Rigorista">🎯</span>' : ""}</td>
+            <td>${recommendation}${p.nome}${p.rigorista ? ' <span class="player-icon rigorista-icon" title="Rigorista" aria-label="Rigorista">🎯</span>' : ""}</td>
             <td>${p.squadra}</td>
-            <td>${p.qta}</td>
-            <td>${p.fvm}</td>
-            <td>${fmt(p.fantamedia_corretta, 2)}${p.stima ? ' <span class="tag stima">stima</span>' : ""}</td>
+            <td>${p.qta} / ${fmt(p.fantamedia_corretta, 2)}${p.stima ? ' <span class="tag stima">stima</span>' : ""}</td>
             <td>${p.partite_valutate ?? 0}</td>
             <td>${p.gol ?? 0}</td>
             <td>${p.assist ?? 0}</td>
             <td>${fmt(p.valore, 2)}</td>
-            <td>${stato}</td>
             <td>${azioni}</td>
         </tr>`;
     }).join("");
