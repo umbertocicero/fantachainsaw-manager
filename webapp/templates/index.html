@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fanta Asta Live · Consigliere</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <h1>⚽ Consigliere Fanta Asta</h1>
+    <p class="subtitle">Consigli in tempo reale su chi scegliere durante l'asta, calcolati da voto, gol, assist, cartellini, rigori e modificatore difesa.</p>
+</header>
+
+<section class="panel" id="data-panel">
+    <h2>Dati e calcolo consigli</h2>
+    <p class="hint">Il punteggio "Valore" nasce dalla fantamedia calcolata sulle giornate di voti caricate qui sotto: voto base + gol, assist, ammonizioni/espulsioni, autogol, rigori (parati/segnati/sbagliati) e modificatore difesa per portieri/difensori, con un bonus per i rigoristi. Finché un giocatore non ha ancora voti disponibili, si usa in via provvisoria il FVM ufficiale (segnalato come "stima"). Oltre ai file .xlsx ufficiali, per una giornata puoi caricare anche il JSON prodotto dal tool live <code>fantacalcio-voti-live-js</code> (<code>npx fantacalcio-voti-live &lt;giornata&gt; &gt; giornata.json</code>): con questa fonte gol, assist, cartellini, autogol e gol subiti sono rilevati, mentre rigori parati/sbagliati non sono al momento riconoscibili nel formato.</p>
+
+    <div class="data-grid">
+        <div>
+            <h3>Quotazioni</h3>
+            <p id="quotazioni-info" class="hint">-</p>
+            <input type="file" id="file-quotazioni" accept=".xlsx">
+            <div class="row-actions">
+                <button class="small" onclick="uploadFile('quotazioni')">Carica</button>
+                <button class="small secondary" onclick="resetQuotazioni()">Usa default</button>
+            </div>
+        </div>
+        <div>
+            <h3>Giornate di voti</h3>
+            <ul id="voti-list" class="file-list"></ul>
+            <input type="file" id="file-voti" accept=".xlsx,.json">
+            <div class="row-actions">
+                <button class="small" onclick="uploadFile('voti')">Aggiungi giornata</button>
+            </div>
+        </div>
+    </div>
+
+    <h3>Pesi del calcolo (fantavoto)</h3>
+    <div class="weights-grid" id="weights-grid"><!-- riempito da JS --></div>
+    <div class="row-actions">
+        <button id="btn-recompute">Ricalcola</button>
+        <button class="secondary" id="btn-pesi-reset">Pesi di default</button>
+    </div>
+    <p id="recompute-status" class="hint"></p>
+</section>
+
+<section class="panel" id="config-panel">
+    <h2>Impostazioni lega</h2>
+    <div class="config-grid">
+        <label>Budget totale
+            <input type="number" id="cfg-budget" min="1" value="500">
+        </label>
+        <label>Portieri
+            <input type="number" id="cfg-P" min="0" value="3">
+        </label>
+        <label>Difensori
+            <input type="number" id="cfg-D" min="0" value="8">
+        </label>
+        <label>Centrocampisti
+            <input type="number" id="cfg-C" min="0" value="8">
+        </label>
+        <label>Attaccanti
+            <input type="number" id="cfg-A" min="0" value="6">
+        </label>
+        <button id="btn-save-config">Salva impostazioni</button>
+        <button id="btn-reset" class="danger">Azzera asta</button>
+    </div>
+</section>
+
+<section class="panel" id="summary-panel">
+    <h2>Situazione squadra "Io"</h2>
+    <div class="summary-grid" id="summary-grid"><!-- riempito da JS --></div>
+</section>
+
+<section class="panel" id="suggestions-panel">
+    <h2>Consigliati per te</h2>
+    <div class="role-tabs" id="suggestion-tabs">
+        <button data-ruolo="P" class="tab active">Portieri</button>
+        <button data-ruolo="D" class="tab">Difensori</button>
+        <button data-ruolo="C" class="tab">Centrocampisti</button>
+        <button data-ruolo="A" class="tab">Attaccanti</button>
+    </div>
+    <div id="suggestions-list" class="cards"><!-- riempito da JS --></div>
+</section>
+
+<section class="panel" id="players-panel">
+    <h2>Tutti i giocatori</h2>
+    <div class="filters">
+        <input type="text" id="search" placeholder="Cerca nome o squadra...">
+        <select id="filter-ruolo">
+            <option value="">Tutti i ruoli</option>
+            <option value="P">Portieri</option>
+            <option value="D">Difensori</option>
+            <option value="C">Centrocampisti</option>
+            <option value="A">Attaccanti</option>
+        </select>
+        <label class="checkbox"><input type="checkbox" id="filter-liberi"> Solo liberi</label>
+    </div>
+    <div class="table-wrap">
+    <table id="players-table">
+        <thead>
+        <tr>
+            <th>Ruolo</th><th>Nome</th><th>Squadra</th><th>Qt.A</th><th>FVM</th>
+            <th>Fantamedia</th><th>PG</th><th>Gol</th><th>Assist</th>
+            <th>Valore</th><th>Stato</th><th>Azioni</th>
+        </tr>
+        </thead>
+        <tbody id="players-tbody"></tbody>
+    </table>
+    </div>
+</section>
+
+<footer>
+    Consigliere Fanta Asta · dati caricabili dal pannello "Dati e calcolo consigli"
+</footer>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
