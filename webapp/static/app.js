@@ -261,6 +261,31 @@ async function resetQuotazioni() {
     await recompute();
 }
 
+async function scaricaGiornataLive() {
+    const input = document.getElementById("live-giornata");
+    const giornata = parseInt(input.value, 10);
+    if (!giornata || giornata < 1) {
+        alert("Inserisci un numero di giornata valido");
+        return;
+    }
+    const status = document.getElementById("recompute-status");
+    status.textContent = `Scaricamento giornata ${giornata} in corso...`;
+    const res = await fetch("/api/live/scarica", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ giornata }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        status.textContent = "";
+        alert(data.errore || "Download non riuscito");
+        return;
+    }
+    status.textContent = `Importata giornata live: ${data.file_importato}`;
+    await loadFiles();
+    await refreshAll();
+}
+
 async function recompute() {
     const status = document.getElementById("recompute-status");
     status.textContent = "Ricalcolo in corso...";

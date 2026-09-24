@@ -33,6 +33,11 @@
             <div class="row-actions">
                 <button class="small" onclick="uploadFile('voti')">Aggiungi giornata</button>
             </div>
+            <div class="row-actions">
+                <input type="number" id="live-giornata" min="1" step="1" placeholder="N. giornata" style="width:7em">
+                <button class="small" onclick="scaricaGiornataLive()">Scarica giornata live</button>
+            </div>
+            <p class="hint">Funziona solo mentre quella giornata è effettivamente in corso (richiede Node.js installato sul server).</p>
         </div>
     </div>
 

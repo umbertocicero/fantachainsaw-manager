@@ -6,7 +6,9 @@ difesa), consiglia quali giocatori scegliere durante un'asta del
 fantacalcio, tenendo conto di budget residuo e ruoli ancora da riempire.
 """
 import json
+import os
 import shutil
+import subprocess
 import threading
 from pathlib import Path
 
@@ -355,6 +357,85 @@ def api_pesi_reset():
     if PESI_FILE.exists():
         PESI_FILE.unlink()
     meta = rebuild_players()
+    return jsonify(meta)
+
+
+@app.post("/api/live/scarica")
+def api_live_scarica():
+    """Scarica i dati live di una giornata usando il tool a riga di comando
+    'fantacalcio-voti-live' (https://github.com/andregri/fantacalcio-voti-live-js,
+    eseguito con npx) e lo importa come nuova giornata di voti. Funziona solo
+    mentre quella giornata è effettivamente in corso: fuori da una giornata
+    live il servizio esterno risponde 404 e qui restituiamo un errore chiaro
+    invece di salvare un file vuoto.
+
+    Body JSON: {"giornata": <numero>}."""
+    body = request.get_json(silent=True) or {}
+    try:
+        giornata = int(body.get("giornata"))
+    except (TypeError, ValueError):
+        return jsonify({"errore": "specifica un numero di giornata valido"}), 400
+    if giornata < 1:
+        return jsonify({"errore": "specifica un numero di giornata valido"}), 400
+
+    npx_path = shutil.which("npx")
+    if not npx_path:
+        return jsonify({
+            "errore": "npx non trovato: installa Node.js per usare questa funzione "
+                      "(vedi il README del progetto)",
+        }), 501
+
+    env = dict(os.environ)
+    # In reti con proxy che ispeziona il traffico HTTPS (certificato
+    # self-signed nella catena), Node rifiuta la connessione all'API di
+    # fantacalcio.it. --use-system-ca fa sì che Node si fidi anche dei
+    # certificati radice installati nel sistema operativo (non disabilita
+    # affatto la verifica del certificato).
+    env["NODE_OPTIONS"] = (env.get("NODE_OPTIONS", "") + " --use-system-ca").strip()
+
+    try:
+        proc = subprocess.run(
+            [npx_path, "--yes", "fantacalcio-voti-live", str(giornata)],
+            capture_output=True, text=True, timeout=90, env=env,
+        )
+    except subprocess.TimeoutExpired:
+        return jsonify({"errore": "timeout: il servizio esterno non ha risposto in tempo"}), 504
+
+    if proc.returncode != 0:
+        return jsonify({
+            "errore": "il download della giornata live è fallito",
+            "dettagli": (proc.stderr or proc.stdout)[-2000:],
+        }), 502
+
+    # Il tool a riga di comando, quando non c'è una partita live in questo
+    # momento (es. giornata non ancora iniziata o già conclusa), stampa un
+    # messaggio di errore su stdout ma esce comunque con codice 0.
+    if "signeduri" in proc.stdout.lower() or "couldn't get" in proc.stdout.lower():
+        return jsonify({
+            "errore": f"nessun dato live per la giornata {giornata}: probabilmente "
+                      "non è in corso in questo momento",
+            "dettagli": proc.stdout.strip()[-500:],
+        }), 404
+
+    try:
+        dati = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return jsonify({
+            "errore": "risposta del servizio esterno non valida",
+            "dettagli": proc.stdout[-2000:],
+        }), 502
+
+    if not dati.get("protoData"):
+        return jsonify({
+            "errore": f"nessun dato live per la giornata {giornata}: probabilmente "
+                      "non è in corso in questo momento",
+        }), 404
+
+    nome_file = f"Giornata_live_{giornata}.json"
+    with open(VOTI_DIR / nome_file, "w", encoding="utf-8") as f:
+        json.dump(dati, f, ensure_ascii=False)
+    meta = rebuild_players()
+    meta["file_importato"] = nome_file
     return jsonify(meta)
 
 

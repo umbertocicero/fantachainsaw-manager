@@ -23,6 +23,12 @@ sui dati di quotazione e voto reali, non sul manuale.
   - feed live in `.json` generato con
     [fantacalcio-voti-live-js](https://github.com/andregri/fantacalcio-voti-live-js)
     (`npx fantacalcio-voti-live <giornata> > giornata.json`).
+- **Download automatico della giornata live**: in alternativa all'upload
+  manuale, il pulsante "Scarica giornata live" nell'interfaccia lancia lo
+  stesso tool (`fantacalcio-voti-live-js`) direttamente dal server e importa
+  subito il risultato. Funziona solo mentre quella giornata è effettivamente
+  in corso (il servizio esterno risponde 404 fuori da una partita live) e
+  richiede Node.js installato (vedi Requisiti).
 - **Gestione asta**: budget totale e slot per ruolo configurabili, segna i
   giocatori come "presi da te" (con prezzo) o "presi da altri" e i consigli
   si aggiornano tenendo conto del budget e degli slot residui.
@@ -31,6 +37,9 @@ sui dati di quotazione e voto reali, non sul manuale.
 
 - Python 3.11+ (sviluppato e testato con Python 3.14)
 - Le dipendenze in [requirements.txt](requirements.txt): Flask, openpyxl, pypdf
+- Facoltativo: [Node.js](https://nodejs.org/) (per il pulsante "Scarica
+  giornata live"; senza Node.js l'app funziona comunque con l'upload manuale
+  dei file)
 
 ## Installazione
 
@@ -76,7 +85,8 @@ python build_data.py
 1. Imposta budget totale e slot per ruolo (Portieri/Difensori/Centrocampisti/
    Attaccanti) nel pannello di configurazione.
 2. Nel pannello "Dati e calcolo consigli" puoi caricare nuove quotazioni o
-   nuove giornate di voti (`.xlsx` o `.json`), modificare i pesi dei
+   nuove giornate di voti (`.xlsx` o `.json`), scaricare automaticamente la
+   giornata live in corso (se Node.js è installato), modificare i pesi dei
    bonus/malus e premere "Ricalcola".
 3. Nella sezione "Consigliati per te" trovi, ruolo per ruolo, i migliori
    giocatori ancora liberi e compatibili col budget residuo.
