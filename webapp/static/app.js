@@ -82,6 +82,12 @@ async function loadPlayers() {
     const liberi = document.getElementById("filter-liberi").checked ? "1" : "0";
     const params = new URLSearchParams({ q, ruolo, liberi });
     const players = await api(`/api/players?${params.toString()}`);
+    const sort = document.getElementById("players-sort").value;
+    players.sort((a, b) => {
+        if (sort === "nome") return a.nome.localeCompare(b.nome, "it");
+        if (sort === "qta") return (b.qta ?? 0) - (a.qta ?? 0) || a.nome.localeCompare(b.nome, "it");
+        return (b.valore ?? 0) - (a.valore ?? 0);
+    });
     const tbody = document.getElementById("players-tbody");
     tbody.innerHTML = players.map(p => {
         let rowClass = "";
@@ -101,7 +107,7 @@ async function loadPlayers() {
         const stato = p.preso_da === "me" ? `Mio (${p.prezzo_pagato})` : p.preso_da === "altri" ? "Preso da altri" : "Libero";
         return `<tr class="${rowClass}">
             <td><span class="pill ${p.ruolo}">${p.ruolo}</span></td>
-            <td>${p.nome}${p.rigorista ? ' <span class="tag rigorista">R</span>' : ""}</td>
+            <td>${p.top_player ? '<span class="player-icon top-icon" title="Top 5 del ruolo" aria-label="Top 5 del ruolo">★</span>' : ""}${p.nome}${p.rigorista ? ' <span class="player-icon rigorista-icon" title="Rigorista" aria-label="Rigorista">🎯</span>' : ""}</td>
             <td>${p.squadra}</td>
             <td>${p.qta}</td>
             <td>${p.fvm}</td>
@@ -178,6 +184,7 @@ document.querySelectorAll("#suggestion-tabs .tab").forEach(btn => {
 document.getElementById("search").addEventListener("input", debounce(loadPlayers, 250));
 document.getElementById("filter-ruolo").addEventListener("change", loadPlayers);
 document.getElementById("filter-liberi").addEventListener("change", loadPlayers);
+document.getElementById("players-sort").addEventListener("change", loadPlayers);
 
 function debounce(fn, ms) {
     let t;

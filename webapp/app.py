@@ -201,6 +201,15 @@ def api_players():
     if q:
         items = [p for p in items if q in p["nome"].lower() or q in p["squadra"].lower()]
     result = [player_with_state(p, draft) for p in items]
+    top_ids = set()
+    for r in RUOLI:
+        ranked = sorted(
+            (p for p in PLAYERS.values() if p["ruolo"] == r),
+            key=lambda p: (-p.get("valore", 0), -(p.get("fantamedia_corretta") or 0)),
+        )
+        top_ids.update(p["id"] for p in ranked[:5])
+    for player in result:
+        player["top_player"] = player["id"] in top_ids
     if solo_liberi:
         result = [p for p in result if p["preso_da"] is None]
     result.sort(key=lambda p: -p["valore"])
